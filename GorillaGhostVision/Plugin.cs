@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
+using GorillaTagScripts;
 using HarmonyLib;
 using Utilla.Attributes;
 
@@ -46,7 +47,7 @@ namespace GorillaGhostVision
             {
                 harmonyInstance ??= Harmony.CreateAndPatchAll(typeof(Plugin).Assembly, Constants.GUID);
 
-                RefreshAllVisuals();
+                Refresh();
                 return;
             }
 
@@ -59,24 +60,28 @@ namespace GorillaGhostVision
                     harmonyInstance = null;
                 }
 
-                RefreshAllVisuals();
+                Refresh();
                 return;
             }
         }
 
-        public void RefreshAllVisuals()
+        public void Refresh()
         {
             if (NetworkSystem.Instance.InRoom)
             {
+                GorillaAmbushManager ambushManager = GorillaGameManager.instance is GorillaGameManager gameManager && gameManager is GorillaAmbushManager tempAmbushManager && tempAmbushManager.isGhostTag ? tempAmbushManager : null;
+
                 List<VRRig> vrRigs = [];
                 VRRigCache.Instance.GetAllUsedRigs(vrRigs);
-                vrRigs.ForEach(rig =>
+
+                foreach(VRRig rig in vrRigs)
                 {
                     if (!rig.isLocal && rig.TryGetComponent(out GRPlayer component))
                     {
                         component.RefreshPlayerVisuals();
                     }
-                });
+                    ambushManager?.UpdatePlayerAppearance(rig);
+                }
             }
         }
     }
